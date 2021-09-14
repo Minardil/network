@@ -2,7 +2,7 @@
 package com.network.network.api.controller;
 
 import com.network.controller.api.NetworkController;
-import com.network.service.NetworkService;
+import com.network.service.device.DevicesService;
 import inet.ipaddr.MACAddressString;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
@@ -23,7 +23,7 @@ class NetworkControllerDeviceTreeUnitTests {
 	private MockMvc mockMvc;
 
 	@MockBean
-	private NetworkService networkService;
+	private DevicesService devicesService;
 
 	@Test
 	public void getTree() throws Exception {
@@ -31,7 +31,7 @@ class NetworkControllerDeviceTreeUnitTests {
 				.andDo(MockMvcResultHandlers.print())
 				.andExpect(status().isOk());
 
-		Mockito.verify(networkService, Mockito.times(1)).getDevicesTree();
+		Mockito.verify(devicesService, Mockito.times(1)).getDevicesTree();
 	}
 
 	@Test
@@ -42,7 +42,7 @@ class NetworkControllerDeviceTreeUnitTests {
 				.andDo(MockMvcResultHandlers.print())
 				.andExpect(status().isBadRequest());
 
-		Mockito.verify(networkService, Mockito.times(0)).getDevicesSubTree(new MACAddressString(VALID_MAC));
+		Mockito.verify(devicesService, Mockito.times(0)).getNode(new MACAddressString(VALID_MAC));
 	}
 
 	@Test
@@ -53,6 +53,6 @@ class NetworkControllerDeviceTreeUnitTests {
 				.andDo(MockMvcResultHandlers.print())
 				.andExpect(status().isNotFound());
 
-		Mockito.verify(networkService, Mockito.times(1)).getDevicesSubTree(new MACAddressString(VALID_MAC));
+		Mockito.verify(devicesService, Mockito.times(1)).getNode(new MACAddressString(VALID_MAC));
 	}
 }

@@ -5,7 +5,7 @@ import com.network.dto.DeviceDTO;
 import com.network.dto.DeviceTreeNodeDTO;
 import com.network.repository.DeviceAlreadyExistsException;
 import com.network.repository.DeviceIsNotRegisteredException;
-import com.network.service.NetworkService;
+import com.network.service.device.DevicesService;
 import inet.ipaddr.MACAddressString;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -19,11 +19,11 @@ import java.util.Optional;
 @RequestMapping(value = "/api/v1/network")
 public class NetworkController {
 
-    private final NetworkService networkService;
+    private final DevicesService devicesService;
 
     @Autowired
-    NetworkController(NetworkService networkService) {
-        this.networkService = networkService;
+    NetworkController(DevicesService devicesService) {
+        this.devicesService = devicesService;
     }
 
     @PostMapping(value = "/registerDevice", consumes = "application/json")
@@ -42,7 +42,7 @@ public class NetworkController {
         }
 
         try {
-            DeviceDTO device = networkService.registerDevice(deviceDTO);
+            DeviceDTO device = devicesService.registerDevice(deviceDTO);
             return ResponseEntity.ok(device);
         } catch (DeviceAlreadyExistsException | DeviceIsNotRegisteredException e) {
             return ResponseEntity.badRequest().build();
@@ -56,7 +56,7 @@ public class NetworkController {
         if (!macAddressString.isValid() || macAddressString.isEmpty()) {
             return ResponseEntity.badRequest().build();
         }
-        Optional<DeviceDTO> deviceDTO = networkService.getDeviceByMacAddress(macAddressString);
+        Optional<DeviceDTO> deviceDTO = devicesService.getDeviceByMacAddress(macAddressString);
         if (deviceDTO.isEmpty()) {
             return ResponseEntity.notFound().build();
         } else {
@@ -66,13 +66,13 @@ public class NetworkController {
 
     @GetMapping(value = "/listDevices")
     public ResponseEntity<Collection<DeviceDTO>> listDevices() {
-        Collection<DeviceDTO> devices = networkService.listDevices();
+        Collection<DeviceDTO> devices = devicesService.listDevices();
         return ResponseEntity.ok(devices);
     }
 
     @GetMapping(value = "/getDevicesTree")
     public ResponseEntity<Collection<DeviceTreeNodeDTO>> getDevicesTree() {
-        Collection<DeviceTreeNodeDTO> devices = networkService.getDevicesTree();
+        Collection<DeviceTreeNodeDTO> devices = devicesService.getDevicesTree();
         return ResponseEntity.ok(devices);
     }
 
@@ -84,7 +84,7 @@ public class NetworkController {
             return ResponseEntity.badRequest().build();
         }
 
-        Optional<DeviceTreeNodeDTO> devices = networkService.getDevicesSubTree(macAddressString);
+        Optional<DeviceTreeNodeDTO> devices = devicesService.getNode(macAddressString);
         if (devices.isEmpty()) {
             return ResponseEntity.notFound().build();
         }

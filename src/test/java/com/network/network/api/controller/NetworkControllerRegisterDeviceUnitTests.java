@@ -5,7 +5,7 @@ import com.network.controller.request.RegisterDeviceRequest;
 import com.network.dto.DeviceDTO;
 import com.network.model.DeviceType;
 import com.network.network.utils.JsonUtils;
-import com.network.service.NetworkService;
+import com.network.service.device.DevicesService;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
@@ -27,7 +27,7 @@ class NetworkControllerRegisterDeviceUnitTests {
 	private MockMvc mockMvc;
 
 	@MockBean
-	private NetworkService networkService;
+	private DevicesService devicesService;
 
 	@Test
 	public void testRegisterDevice() throws Exception {
@@ -36,7 +36,7 @@ class NetworkControllerRegisterDeviceUnitTests {
 				.setMacAddress(VALID_MAC)
 				.setUplinkMacAddress(null);
 
-		Mockito.when(networkService.registerDevice(deviceDTO)).thenReturn(deviceDTO);
+		Mockito.when(devicesService.registerDevice(deviceDTO)).thenReturn(deviceDTO);
 
 		var registerDeviceRequest = new RegisterDeviceRequest().setDevice(deviceDTO);
 		var requestBody = JsonUtils.serialize(registerDeviceRequest);

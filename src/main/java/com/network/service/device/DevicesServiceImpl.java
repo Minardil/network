@@ -1,4 +1,4 @@
-package com.network.service;
+package com.network.service.device;
 
 import com.network.dto.DeviceDTO;
 import com.network.dto.DeviceTreeNodeDTO;
@@ -9,14 +9,15 @@ import com.network.model.DeviceTreeNode;
 import com.network.repository.DeviceAlreadyExistsException;
 import com.network.repository.DeviceIsNotRegisteredException;
 import com.network.repository.DeviceRepository;
+import com.network.service.device.cache.DeviceNodesCache;
 import inet.ipaddr.MACAddressString;
 import lombok.NonNull;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentSkipListSet;
+import java.util.Collection;
+import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.stream.Collectors;
@@ -24,33 +25,33 @@ import java.util.stream.Collectors;
 import static com.network.dto.mapper.DeviceModelDTOMapper.mapToDTO;
 
 @Service
-public class NetworkServiceImpl implements NetworkService {
+public class DevicesServiceImpl implements DevicesService {
     private final ReadWriteLock readWriteLock;
 
-    //todo separate into cache
-    private final Map<String, DeviceTreeNode> deviceMap;
-    private final SortedSet<DeviceTreeNode> devices;
     private final DeviceRepository deviceRepository;
-    //in order to not sort at each request
-    private final Comparator<DeviceTreeNode> comparator = Comparator.<DeviceTreeNode>comparingInt(node -> node.getDevice().getDeviceType().getOrder()).thenComparing(device -> device.getDevice().getMacAddress().toNormalizedString());
+    private final DeviceNodesCache deviceNodesCache;
 
     @Autowired
-    public NetworkServiceImpl(DeviceRepository deviceRepository) {
+    public DevicesServiceImpl(DeviceRepository deviceRepository, DeviceNodesCache deviceNodesCache) {
+        this.deviceNodesCache = deviceNodesCache;
         this.readWriteLock = new ReentrantReadWriteLock();
         this.deviceRepository = deviceRepository;
-        this.deviceMap = new ConcurrentHashMap<>();
-        this.devices = new ConcurrentSkipListSet<>(comparator);
 
         initCache();
     }
 
     @Override
     public Optional<DeviceDTO> getDeviceByMacAddress(@NonNull MACAddressString macAddressString) {
-        var device = deviceMap.get(macAddressString.toNormalizedString());
-        if (device == null) {
-            return Optional.empty();
-        } else {
-            return Optional.of(mapToDTO(device.getDevice()));
+        readWriteLock.readLock().lock();
+        try {
+            var device = deviceNodesCache.getNode(macAddressString);
+            if (device.isEmpty()) {
+                return Optional.empty();
+            } else {
+                return Optional.of(mapToDTO(device.get().getDevice()));
+            }
+        } finally {
+            readWriteLock.readLock().unlock();
         }
     }
 
@@ -64,7 +65,9 @@ public class NetworkServiceImpl implements NetworkService {
 
             String macAddressNormalized = device.getMacAddress().toNormalizedString();
 
-            if (deviceMap.containsKey(macAddressNormalized)) {
+            Optional<DeviceTreeNode> node = deviceNodesCache.getNode(device.getMacAddress());
+
+            if (node.isPresent()) {
                 throw new DeviceAlreadyExistsException(macAddressNormalized);
             }
 
@@ -72,42 +75,34 @@ public class NetworkServiceImpl implements NetworkService {
 
             var parentMacAddress = device.getUplinkMacAddress();
             if (!parentMacAddress.isEmpty()) {
-                attachDeviceToParent(deviceNode, parentMacAddress);
+                validateParent(parentMacAddress);
             }
+
             deviceRepository.addDevice(device);
-            devices.add(deviceNode);
-            deviceMap.put(macAddressNormalized, deviceNode);
+
+            deviceNodesCache.addNode(deviceNode);
+            if (!parentMacAddress.isEmpty()) {
+                deviceNodesCache.attachNode(deviceNode.getDevice().getMacAddress(), parentMacAddress);
+            }
         } finally {
             readWriteLock.writeLock().unlock();
         }
         return deviceDTO;
     }
 
-    private void attachDeviceToParent(DeviceTreeNode deviceNode, MACAddressString parentMacAddress) {
+    private void validateParent(MACAddressString parentMacAddress) throws DeviceIsNotRegisteredException {
         var uplinkMacAddress = parentMacAddress.toNormalizedString();
-        var parentNode = deviceMap.get(uplinkMacAddress);
-        if (parentNode == null) {
+        var parentNode = deviceNodesCache.getNode(parentMacAddress);
+        if (parentNode.isEmpty()) {
             throw new DeviceIsNotRegisteredException(uplinkMacAddress);
-        } else {
-            attachDeviceToParent(deviceNode, parentNode);
         }
     }
-
-    private void attachDeviceToParent(DeviceTreeNode deviceNode, DeviceTreeNode parentNode) {
-        SortedSet<DeviceTreeNode> parentNodes = parentNode.getNodes();
-        if (parentNodes == null) {
-            parentNodes = createNodeListSet();
-            parentNode.setNodes(parentNodes);
-        }
-        parentNodes.add(deviceNode);
-    }
-
 
     @Override
     public Collection<DeviceDTO> listDevices() {
         readWriteLock.readLock().lock();
         try {
-            return devices.stream()
+            return deviceNodesCache.getAllNodes().stream()
                     .map(DeviceTreeNode::getDevice)
                     .map(DeviceModelDTOMapper::mapToDTO)
                     .collect(Collectors.toUnmodifiableList());
@@ -120,7 +115,7 @@ public class NetworkServiceImpl implements NetworkService {
     public Collection<DeviceTreeNodeDTO> getDevicesTree() {
         readWriteLock.readLock().lock();
         try {
-            var filterDevices = devices.stream()
+            var filterDevices = deviceNodesCache.getAllNodes().stream()
                     .filter(node -> node.getDevice().getUplinkMacAddress() == null || node.getDevice().getUplinkMacAddress().isEmpty())
                     .collect(Collectors.toUnmodifiableList());
 
@@ -131,22 +126,14 @@ public class NetworkServiceImpl implements NetworkService {
     }
 
     @Override
-    public Optional<DeviceTreeNodeDTO> getDevicesSubTree(@NonNull MACAddressString macAddressString) {
+    public Optional<DeviceTreeNodeDTO> getNode(@NonNull MACAddressString macAddressString) {
         readWriteLock.readLock().lock();
         try {
-            DeviceTreeNode deviceNode = deviceMap.get(macAddressString.toNormalizedString());
-            if (deviceNode != null) {
-                return Optional.of(DeviceTreeNodeModelDTOMapper.mapToDTO(deviceNode));
-            } else {
-                return Optional.empty();
-            }
+            Optional<DeviceTreeNode> deviceNode = deviceNodesCache.getNode(macAddressString);
+            return deviceNode.map(DeviceTreeNodeModelDTOMapper::mapToDTO);
         } finally {
             readWriteLock.readLock().unlock();
         }
-    }
-
-    private SortedSet<DeviceTreeNode> createNodeListSet() {
-        return new ConcurrentSkipListSet<>(comparator);
     }
 
     private void initCache() {
@@ -154,25 +141,21 @@ public class NetworkServiceImpl implements NetworkService {
         try {
             Set<Device> devicesFromRepository = deviceRepository.getAllDevices();
             devicesFromRepository.forEach(this::addDeviceToCache);
-            devicesFromRepository.forEach(this::attachDeviceToParent);
+            devicesFromRepository.forEach(this::attachNodes);
         } finally {
             readWriteLock.writeLock().unlock();
         }
     }
 
-    private void attachDeviceToParent(Device device) {
+    private void attachNodes(Device device) {
         MACAddressString uplinkMacAddress = device.getUplinkMacAddress();
         if (uplinkMacAddress != null && !uplinkMacAddress.isEmpty()) {
-            DeviceTreeNode parentNode = deviceMap.get(uplinkMacAddress.toNormalizedString());
-            parentNode.getNodes().add(deviceMap.get(device.getMacAddress().toNormalizedString()));
+            deviceNodesCache.attachNode(device.getMacAddress(), uplinkMacAddress);
         }
     }
 
     private void addDeviceToCache(Device device) {
-        var deviceNode = new DeviceTreeNode()
-                .setDevice(device)
-                .setNodes(createNodeListSet());
-        deviceMap.put(device.getMacAddress().toNormalizedString(), deviceNode);
-        devices.add(deviceNode);
+        var deviceNode = new DeviceTreeNode().setDevice(device);
+        deviceNodesCache.addNode(deviceNode);
     }
 }

@@ -4,7 +4,7 @@ import com.network.controller.api.NetworkController;
 import com.network.dto.DeviceDTO;
 import com.network.model.DeviceType;
 import com.network.network.utils.JsonUtils;
-import com.network.service.NetworkService;
+import com.network.service.device.DevicesService;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
@@ -28,7 +28,7 @@ class NetworkControllerListDevicesUnitTests {
 	private MockMvc mockMvc;
 
 	@MockBean
-	private NetworkService networkService;
+	private DevicesService devicesService;
 
 	@Test
 	public void testRegisterDevice() throws Exception {
@@ -43,7 +43,7 @@ class NetworkControllerListDevicesUnitTests {
 				.setUplinkMacAddress(null);
 
 		var devices = Arrays.asList(deviceDTO1, deviceDTO2);
-		Mockito.when(networkService.listDevices()).thenReturn(devices);
+		Mockito.when(devicesService.listDevices()).thenReturn(devices);
 
 		this.mockMvc.perform(MockMvcRequestBuilders.get("/api/v1/network/listDevices"))
 				.andDo(MockMvcResultHandlers.print())

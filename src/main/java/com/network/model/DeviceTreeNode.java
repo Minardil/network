@@ -6,7 +6,7 @@ import lombok.experimental.Accessors;
 import org.springframework.lang.NonNull;
 import org.springframework.validation.annotation.Validated;
 
-import java.util.SortedSet;
+import java.util.Collection;
 
 @Data
 @Accessors(chain = true)
@@ -15,5 +15,5 @@ import java.util.SortedSet;
 public class DeviceTreeNode {
     @NonNull
     private Device device;
-    private SortedSet<DeviceTreeNode> nodes;
+    private Collection<DeviceTreeNode> nodes;
 }

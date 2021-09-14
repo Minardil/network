@@ -4,7 +4,7 @@ import com.network.controller.api.NetworkController;
 import com.network.dto.DeviceDTO;
 import com.network.model.DeviceType;
 import com.network.network.utils.JsonUtils;
-import com.network.service.NetworkService;
+import com.network.service.device.DevicesService;
 import inet.ipaddr.MACAddressString;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -30,7 +30,7 @@ class NetworkControllerGetDeviceByIdUnitTests {
 	private MockMvc mockMvc;
 
 	@MockBean
-	private NetworkService networkService;
+	private DevicesService devicesService;
 
 	@Test
 	public void testInvalidMac() throws Exception {
@@ -54,7 +54,7 @@ class NetworkControllerGetDeviceByIdUnitTests {
 		var mac = new MACAddressString(VALID_MAC);
 		var deviceDTO = new DeviceDTO().setMacAddress(VALID_MAC).setDeviceType(DeviceType.Gateway).setUplinkMacAddress(VALID_MAC_2);
 
-		Mockito.when(networkService.getDeviceByMacAddress(mac)).thenReturn(Optional.of(deviceDTO));
+		Mockito.when(devicesService.getDeviceByMacAddress(mac)).thenReturn(Optional.of(deviceDTO));
 		this.mockMvc.perform(MockMvcRequestBuilders.get("/api/v1/network/getDeviceByMac")
 						.param("mac", VALID_MAC)
 				)
@@ -70,7 +70,7 @@ class NetworkControllerGetDeviceByIdUnitTests {
 	public void testNotFound() throws Exception {
 		var mac = new MACAddressString(VALID_MAC_2);
 
-		Mockito.when(networkService.getDeviceByMacAddress(mac)).thenReturn(Optional.empty());
+		Mockito.when(devicesService.getDeviceByMacAddress(mac)).thenReturn(Optional.empty());
 		this.mockMvc.perform(MockMvcRequestBuilders.get("/api/v1/network/getDeviceByMac")
 						.param("mac", VALID_MAC_2)
 				)
