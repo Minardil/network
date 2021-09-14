@@ -16,7 +16,6 @@ import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import org.springframework.test.web.servlet.result.MockMvcResultHandlers;
 
 import java.util.Arrays;
-import java.util.TreeSet;
 
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -43,7 +42,7 @@ class NetworkControllerListDevicesUnitTests {
 				.setMacAddress(VALID_MAC)
 				.setUplinkMacAddress(null);
 
-		var devices = new TreeSet<>(Arrays.asList(deviceDTO1, deviceDTO2));
+		var devices = Arrays.asList(deviceDTO1, deviceDTO2);
 		Mockito.when(networkService.listDevices()).thenReturn(devices);
 
 		this.mockMvc.perform(MockMvcRequestBuilders.get("/api/v1/network/listDevices"))
