@@ -2,3 +2,7 @@ springdoc:
   swagger-ui.path: /swagger-ui.html
 api-docs:
   path: /api-docs
+app:
+  device:
+    repository:
+      db-path: "C:/Users/konst/network.db"

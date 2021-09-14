@@ -20,26 +20,25 @@ repositories {
 }
 
 dependencies {
-	implementation 'org.springframework.boot:spring-boot-starter-web'
+	implementation 'org.springframework.boot:spring-boot-starter-web:2.5.4'
 	implementation 'com.github.seancfoley:ipaddress:5.3.3'
 	implementation("org.springdoc:springdoc-openapi-ui:1.5.10")
 	implementation("org.springdoc:springdoc-openapi-webmvc-core:1.5.10")
+	implementation 'commons-io:commons-io:2.11.0'
 
-	annotationProcessor 'org.springframework.boot:spring-boot-configuration-processor'
-	testImplementation 'org.springframework.boot:spring-boot-starter-test'
+	annotationProcessor 'org.springframework.boot:spring-boot-configuration-processor:2.5.4'
 
 	// https://projectlombok.org
-	compileOnly 'org.projectlombok:lombok:1.18.4'
-	annotationProcessor 'org.projectlombok:lombok:1.18.4'
+	compileOnly 'org.projectlombok:lombok:1.18.20'
+	annotationProcessor 'org.projectlombok:lombok:1.18.20'
 
-	testImplementation('org.springframework.boot:spring-boot-starter-test') {
+	testImplementation('org.springframework.boot:spring-boot-starter-test:2.5.4') {
 		exclude group: 'org.junit.vintage', module: 'junit-vintage-engine'
 	}
 
-	testImplementation('org.springframework.boot:spring-boot-starter-test')
-	testImplementation("org.junit.jupiter:junit-jupiter-api:5.4.2")
-	testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:5.4.2")
-	testCompileOnly 'junit:junit:4.12'
+	testImplementation('org.junit.jupiter:junit-jupiter-api:5.7.2')
+	testRuntimeOnly('org.junit.jupiter:junit-jupiter-engine:5.7.2')
+	testCompileOnly 'junit:junit:4.13.2'
 }
 
 test {

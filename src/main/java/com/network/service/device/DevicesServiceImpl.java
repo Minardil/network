@@ -17,7 +17,6 @@ import org.springframework.stereotype.Service;
 
 import java.util.Collection;
 import java.util.Optional;
-import java.util.Set;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.stream.Collectors;
@@ -139,7 +138,7 @@ public class DevicesServiceImpl implements DevicesService {
     private void initCache() {
         readWriteLock.writeLock().lock();
         try {
-            Set<Device> devicesFromRepository = deviceRepository.getAllDevices();
+            Collection<Device> devicesFromRepository = deviceRepository.getAllDevices();
             devicesFromRepository.forEach(this::addDeviceToCache);
             devicesFromRepository.forEach(this::attachNodes);
         } finally {
