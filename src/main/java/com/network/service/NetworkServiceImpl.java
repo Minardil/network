@@ -5,7 +5,6 @@ import com.network.dto.DeviceTreeNodeDTO;
 import com.network.dto.mapper.DeviceTreeNodeModelDTOMapper;
 import com.network.model.Device;
 import com.network.model.DeviceTreeNode;
-import com.network.model.DeviceType;
 import com.network.repository.DeviceAlreadyExistsException;
 import com.network.repository.DeviceIsNotRegisteredException;
 import com.network.repository.DeviceRepository;
@@ -33,7 +32,7 @@ public class NetworkServiceImpl implements NetworkService {
     private final SortedSet<DeviceTreeNode> devices;
     private final DeviceRepository deviceRepository;
     //in order to not sort at each request
-    private final Comparator<DeviceTreeNode> comparator = Comparator.<DeviceTreeNode>comparingInt(node -> getDeviceTypeOrder(node.getDevice().getDeviceType())).thenComparing(device -> device.getDevice().getMacAddress().toNormalizedString());
+    private final Comparator<DeviceTreeNode> comparator = Comparator.<DeviceTreeNode>comparingInt(node -> node.getDevice().getDeviceType().getOrder()).thenComparing(device -> device.getDevice().getMacAddress().toNormalizedString());
 
     @Autowired
     public NetworkServiceImpl(DeviceRepository deviceRepository) {
@@ -148,15 +147,6 @@ public class NetworkServiceImpl implements NetworkService {
 
     private SortedSet<DeviceTreeNode> createNodeListSet() {
         return new ConcurrentSkipListSet<>(comparator);
-    }
-
-    public static int getDeviceTypeOrder(DeviceType deviceType) {
-        switch (deviceType) {
-            case Gateway: return 0;
-            case Switch: return 1;
-            case Access: return 2;
-            default: throw new IllegalArgumentException("Unsupported type: " + deviceType);
-        }
     }
 
     private void initCache() {

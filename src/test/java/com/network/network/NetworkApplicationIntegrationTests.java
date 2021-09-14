@@ -5,7 +5,6 @@ import com.network.dto.DeviceDTO;
 import com.network.dto.DeviceTreeNodeDTO;
 import com.network.dto.mapper.DeviceModelDTOMapper;
 import com.network.network.utils.DeviceRepositoryInitialDataSupplier;
-import com.network.service.NetworkServiceImpl;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -34,7 +33,7 @@ class NetworkApplicationIntegrationTests {
 		Collection<DeviceDTO> deviceDTOS = DeviceModelDTOMapper.mapToDTOs(initialDataSupplier.get(), EnumSet.of(DeviceModelDTOMapper.Fields.DeviceType, DeviceModelDTOMapper.Fields.MacAddress));
 
 		deviceDTOS = deviceDTOS.stream().sorted(Comparator.
-				<DeviceDTO>comparingInt(device -> NetworkServiceImpl.getDeviceTypeOrder(device.getDeviceType()))
+				<DeviceDTO>comparingInt(device -> device.getDeviceType().getOrder())
 				.thenComparing(DeviceDTO::getMacAddress)
 		).collect(Collectors.toUnmodifiableList());
 
