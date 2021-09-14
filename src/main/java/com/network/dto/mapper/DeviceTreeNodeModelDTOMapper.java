@@ -6,25 +6,22 @@ import org.springframework.util.CollectionUtils;
 
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 public class DeviceTreeNodeModelDTOMapper {
 
-    //todo extract field filtering to controller level
-    public static DeviceTreeNodeDTO mapToDTO(DeviceTreeNode node, Set<DeviceModelDTOMapper.Fields> fields) {
+    public static DeviceTreeNodeDTO mapToDTO(DeviceTreeNode node) {
         return new DeviceTreeNodeDTO()
-                .setDevice(DeviceModelDTOMapper.mapToDTO(node.getDevice(), fields))
-                .setNodes(mapToDTOs(node.getNodes(), fields));
+                .setDevice(DeviceModelDTOMapper.mapToDTO(node.getDevice()))
+                .setNodes(mapToDTOs(node.getNodes()));
     }
 
-    //todo extract field filtering to controller level
-    public static Collection<DeviceTreeNodeDTO> mapToDTOs(Collection<DeviceTreeNode> nodes, Set<DeviceModelDTOMapper.Fields> fields) {
+    public static Collection<DeviceTreeNodeDTO> mapToDTOs(Collection<DeviceTreeNode> nodes) {
         if (CollectionUtils.isEmpty(nodes)) {
             return Collections.emptyList();
         }
         return nodes.stream()
-                .map(item -> mapToDTO(item, fields))
+                .map(DeviceTreeNodeModelDTOMapper::mapToDTO)
                 .collect(Collectors.toUnmodifiableList());
     }
 }

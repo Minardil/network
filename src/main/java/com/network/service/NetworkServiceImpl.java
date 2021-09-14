@@ -2,6 +2,7 @@ package com.network.service;
 
 import com.network.dto.DeviceDTO;
 import com.network.dto.DeviceTreeNodeDTO;
+import com.network.dto.mapper.DeviceModelDTOMapper;
 import com.network.dto.mapper.DeviceTreeNodeModelDTOMapper;
 import com.network.model.Device;
 import com.network.model.DeviceTreeNode;
@@ -20,7 +21,6 @@ import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.stream.Collectors;
 
-import static com.network.dto.mapper.DeviceModelDTOMapper.Fields;
 import static com.network.dto.mapper.DeviceModelDTOMapper.mapToDTO;
 
 @Service
@@ -50,7 +50,7 @@ public class NetworkServiceImpl implements NetworkService {
         if (device == null) {
             return Optional.empty();
         } else {
-            return Optional.of(mapToDTO(device.getDevice(), EnumSet.of(Fields.DeviceType, Fields.MacAddress)));
+            return Optional.of(mapToDTO(device.getDevice()));
         }
     }
 
@@ -109,7 +109,7 @@ public class NetworkServiceImpl implements NetworkService {
         try {
             return devices.stream()
                     .map(DeviceTreeNode::getDevice)
-                    .map(device -> mapToDTO(device, EnumSet.of(Fields.DeviceType, Fields.MacAddress)))
+                    .map(DeviceModelDTOMapper::mapToDTO)
                     .collect(Collectors.toUnmodifiableList());
         } finally {
             readWriteLock.readLock().unlock();
@@ -124,7 +124,7 @@ public class NetworkServiceImpl implements NetworkService {
                     .filter(node -> node.getDevice().getUplinkMacAddress() == null || node.getDevice().getUplinkMacAddress().isEmpty())
                     .collect(Collectors.toUnmodifiableList());
 
-            return DeviceTreeNodeModelDTOMapper.mapToDTOs(filterDevices, EnumSet.of(Fields.MacAddress));
+            return DeviceTreeNodeModelDTOMapper.mapToDTOs(filterDevices);
         } finally {
             readWriteLock.readLock().unlock();
         }
@@ -136,7 +136,7 @@ public class NetworkServiceImpl implements NetworkService {
         try {
             DeviceTreeNode deviceNode = deviceMap.get(macAddressString.toNormalizedString());
             if (deviceNode != null) {
-                return Optional.of(DeviceTreeNodeModelDTOMapper.mapToDTO(deviceNode, EnumSet.of(Fields.MacAddress)));
+                return Optional.of(DeviceTreeNodeModelDTOMapper.mapToDTO(deviceNode));
             } else {
                 return Optional.empty();
             }

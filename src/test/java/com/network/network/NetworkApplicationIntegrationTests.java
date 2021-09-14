@@ -30,7 +30,7 @@ class NetworkApplicationIntegrationTests {
 	void listDevicesOrdered() {
 		Collection<DeviceDTO> response = networkController.listDevices().getBody();
 		Assertions.assertNotNull(response);
-		Collection<DeviceDTO> deviceDTOS = DeviceModelDTOMapper.mapToDTOs(initialDataSupplier.get(), EnumSet.of(DeviceModelDTOMapper.Fields.DeviceType, DeviceModelDTOMapper.Fields.MacAddress));
+		Collection<DeviceDTO> deviceDTOS = DeviceModelDTOMapper.mapToDTOs(initialDataSupplier.get());
 
 		deviceDTOS = deviceDTOS.stream().sorted(Comparator.
 				<DeviceDTO>comparingInt(device -> device.getDeviceType().getOrder())
